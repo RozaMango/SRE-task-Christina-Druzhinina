@@ -47,12 +47,29 @@ awk '/499/{print $6}' PATH/access.log | sort  | sort -nr
 
 As we can see that the biggest number of requests goes from one IP. So, it can be bots trying automatically brute force the backend or spam. It's always good to use a Firewall to prevent overload the system.
 
-Also, there are no server errors like 500, so theer is no issue with the server.
+There are no 500 server errors.
 
 Howover, it is noticible that there are many requests in first 4 minutes and then the last minute we got few requests. Again, if it spam or bot activities, the system will not react immediately to the changes in the Network. So, or the spam activity is stopped or the Firewall start to work after some alert was sent and on the 5th minute  we got fewer requests. 
 
-The HTTP 499 error appears in Nginx logs. This can happen for several reasons, but most commonly, it’s due to either a browser timing out or a user canceling the request.
+The HTTP 499 error appears in Nginx logs. This can happen for several reasons.
 
-Important to note that this can also be caused by the server; if the server takes too long to respond, the client gives up. In this case, it is necessary to check the Load Balancer or/and CDN setup. 
+As the error can be caused by the cient or server, it is necessary to check the logs first and test the page using several browers.
 
-If to wait enough and do not close the connection (that shows 499 error), the user would see 504 error. As we can see, that the error appears only on one page and on the same website, so it make sense to  check Load Balance/CDN logs and see if the issue is with those services or the issue is on the client's side.
+However, the issue is only with one page, we need to check the URL for some specification about that URL: Does the URL includes certain characters or parameters that are causing issues with how the server handles the request?
+
+It is necessary to check logs and if it enough resouces to handle the requests:
+
+- Issues with firewalls or proxies can sometimes lead to connection closures, resulting in a 499 response.
+
+- Misconfiguration of the server, particularly settings related to timeouts and connection handling, can cause the server to return a 499 error.
+
+- Problems with the network between the client and the server could cause intermittent connection closures, triggering a 499 status code. So, we can check Load Balancer logs and CDN logs.
+
+As 499 error leads to 504 error if wait a little bit longer, the issue can be in Heavy Server Load: If the server is under heavy load and cannot respond to requests in a timely manner.
+
+Conclusion: 
+1) we should check the IP that sends the most requests from; Too many requests can slow down the server and make it unavailable;
+2) check the logs to find our why we see 499 only on the particular /page.php.(his template file is specifically used for rendering individual pages in WordPress. It provides a unique layout and design for static pages created within the WordPress admin dashboard).
+So, the issue can be with resources or how the server handles the request to that page;
+3) the first 4 minutes there were a lot of requests then it dropped dramatically;
+4) 50% of the requests go to the same website example2.com.
