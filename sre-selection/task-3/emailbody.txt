@@ -1,3 +1,0 @@
-Subject: Important: Alert!
- 
-The load time for website $WEBSITE is exceeded. Please check the details and solve the issue if it is needed. 
