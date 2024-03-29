@@ -1,0 +1,78 @@
+I used Minikube with Docker Desktop.
+So I installed Minikube and Docker Desktop on my PC from the official websites >> then enabled Kubernetes option in the Settings of Docker Desktop.
+
+
+----------------------------------
+minikube start
+
+----- kubectl apply -f nginx.yaml
+deployment.apps/sretest created
+service/sretest-service configured
+
+
+---- kubectl get service
+
+NAME              TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
+kubernetes        ClusterIP   10.96.0.1        <none>        443/TCP        4d2h
+sretest-service   NodePort    10.100.109.103   <none>        80:31352/TCP   3d2h
+
+kubectl describe service sretest-service
+
+
+Selector:                 app=sretest-service  # selector should be "sretest"
+Endpoints:                <none>  - # there is no Endpoint
+Session Affinity:         None  
+External Traffic Policy:  Cluster
+Events:                   <none>
+
+-------- kubectl describe pod
+
+Node:             <none>
+Labels:           app=sretest
+                  pod-template-hash=56848dfccc
+Annotations:      <none>
+Status:           Pending
+IP:
+IPs:              <none>
+
+
+Warning  FailedScheduling  2d17h (x113 over 3d2h)  default-scheduler  0/1 nodes are available: 1 node(s) didn't match Pod's node affinity/selector. preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling..
+
+
+>>> And I see the error: 0/1 nodes are available: 1 node(s) didn't match Pod's node affinity/selector. preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling..
+
+The error message "0/1 nodes are available: 1 node(s) didn't match Pod's node affinity/selector" indicates that there are no nodes available that match the node affinity requirements specified in the Pod's configuration.
+
+
+-------- kubectl get pods --field-selector=status.phrase=Pending
+
+Error from server (BadRequest): Unable to find "/v1, Resource=pods" that match label selector "", field selector "status.phrase=Pending": field label not supported: status.phrase
+
+-------- kubectl get events
+
+LAST SEEN   TYPE      REASON                    OBJECT                                    MESSAGE
+8m16s       Normal    Starting                  node/minikube                             Starting kubelet.   
+8m15s       Normal    NodeHasSufficientMemory   node/minikube                             Node minikube status is now: NodeHasSufficientMemory
+8m15s       Normal    NodeHasNoDiskPressure     node/minikube                             Node minikube status is now: NodeHasNoDiskPressure
+8m15s       Normal    NodeHasSufficientPID      node/minikube                             Node minikube status is now: NodeHasSufficientPID
+8m15s       Normal    NodeAllocatableEnforced   node/minikube                             Updated Node Allocatable limit across pods
+7m57s       Normal    Starting                  node/minikube
+7m49s       Normal    RegisteredNode            node/minikube                             Node minikube event: Registered Node minikube in Controller
+2d17h       Warning   FailedScheduling          pod/nginx                                 0/1 nodes are available: 1 node(s) didn't match Pod's node affinity/selector. preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling..
+
+
+The issue is in the part: 
+spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/application
+                operator: In
+                values:
+                - "sretest"
+
+As when I removed that code, there was no issue and everything worked. I found this information: 
+If you're trying to deploy this configuration on your local machine using Minikube or a similar local Kubernetes cluster, you typically don't need to specify node labels for node affinity. In such cases, you can remove the nodeSelector section altogether from the deployment.yaml file.
+
